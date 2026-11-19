@@ -1,29 +1,43 @@
-// Vice City After Dark — the cover renderer.
+// One Night in Vice City — the cover renderer.
 //
-// Draws a multi-panel GTA-style poster (photo panels + colour grade + bold
-// lettering) onto any canvas, at any size. Pure canvas, no network: the photos
-// are the caller's images and the fonts are the app's own OFL files under
-// app/fonts/ (Anton for the title, Pacifico for the neon script subtitle).
+// Draws a multi-panel GTA-style poster onto any canvas, at any size: the
+// photo panels fill the whole cover, each carrying a time + place chip, and
+// the giant gradient title crashes OVER the bottom third of the photos —
+// thick black outline, neon glow, a dark scrim behind the lettering —
+// instead of sitting in a band below them. The cover is a timeline of one
+// night, hour by hour, and the panels are its scenes.
 //
-// The cover is two zones: the art area (top 74%) holds the photo panels, and
-// the title band (bottom 26%) holds the kicker, the giant title, the script
-// subtitle and the tagline. The same drawCover() paints the live preview and
-// the exported PNG, so what the maker sees is exactly what they share.
+// Pure canvas, no network. The photos are the caller's images; the fonts are
+// the app's own OFL files under app/fonts/ (Anton for the title, Pacifico
+// for the neon script subtitle). The same drawCover() paints the live preview
+// and the exported PNG, so what the maker sees is exactly what they share.
 
-export const ART_BOTTOM = 0.74;
+export const TITLE_ZONE = 0.62;
 
-// Five multi-panel layouts. Each panel is a rectangle in normalised cover
-// coordinates (0..1) inside the art area; `photos` is the default photo slot
-// each panel shows (0, 1 or 2) when that many photos are loaded.
+// Six multi-panel layouts. Each panel is a rectangle in normalised cover
+// coordinates (0..1) across the whole cover; `photos` is the default photo
+// slot each panel shows (0, 1 or 2) when that many photos are loaded.
 export const LAYOUTS = [
+  {
+    id: 'one-night',
+    name: 'One Night',
+    panels: [
+      { x: 0, y: 0, w: 0.52, h: 1 },
+      { x: 0.52, y: 0, w: 0.24, h: 0.5 },
+      { x: 0.76, y: 0, w: 0.24, h: 0.5 },
+      { x: 0.52, y: 0.5, w: 0.24, h: 0.5 },
+      { x: 0.76, y: 0.5, w: 0.24, h: 0.5 },
+    ],
+    photos: [0, 1, 0, 1, 0],
+  },
   {
     id: 'night-drive',
     name: 'Night Drive',
     panels: [
-      { x: 0, y: 0, w: 0.6, h: 0.74 },
-      { x: 0.6, y: 0, w: 0.4, h: 0.25 },
-      { x: 0.6, y: 0.25, w: 0.4, h: 0.245 },
-      { x: 0.6, y: 0.495, w: 0.4, h: 0.245 },
+      { x: 0, y: 0, w: 0.6, h: 1 },
+      { x: 0.6, y: 0, w: 0.4, h: 0.34 },
+      { x: 0.6, y: 0.34, w: 0.4, h: 0.33 },
+      { x: 0.6, y: 0.67, w: 0.4, h: 0.33 },
     ],
     photos: [0, 1, 0, 1],
   },
@@ -31,10 +45,10 @@ export const LAYOUTS = [
     id: 'the-crew',
     name: 'The Crew',
     panels: [
-      { x: 0, y: 0, w: 1, h: 0.47 },
-      { x: 0, y: 0.47, w: 0.333, h: 0.27 },
-      { x: 0.333, y: 0.47, w: 0.334, h: 0.27 },
-      { x: 0.667, y: 0.47, w: 0.333, h: 0.27 },
+      { x: 0, y: 0, w: 1, h: 0.64 },
+      { x: 0, y: 0.64, w: 0.333, h: 0.36 },
+      { x: 0.333, y: 0.64, w: 0.334, h: 0.36 },
+      { x: 0.667, y: 0.64, w: 0.333, h: 0.36 },
     ],
     photos: [0, 1, 0, 1],
   },
@@ -42,9 +56,9 @@ export const LAYOUTS = [
     id: 'getaway',
     name: 'Getaway',
     panels: [
-      { x: 0, y: 0, w: 0.38, h: 0.37 },
-      { x: 0, y: 0.37, w: 0.38, h: 0.37 },
-      { x: 0.38, y: 0, w: 0.62, h: 0.74 },
+      { x: 0, y: 0, w: 0.38, h: 0.5 },
+      { x: 0, y: 0.5, w: 0.38, h: 0.5 },
+      { x: 0.38, y: 0, w: 0.62, h: 1 },
     ],
     photos: [1, 0, 0],
   },
@@ -52,11 +66,11 @@ export const LAYOUTS = [
     id: 'city-strips',
     name: 'City Strips',
     panels: [
-      { x: 0, y: 0, w: 0.24, h: 0.74 },
-      { x: 0.24, y: 0, w: 0.19, h: 0.74 },
-      { x: 0.43, y: 0, w: 0.19, h: 0.74 },
-      { x: 0.62, y: 0, w: 0.19, h: 0.74 },
-      { x: 0.81, y: 0, w: 0.19, h: 0.74 },
+      { x: 0, y: 0, w: 0.2, h: 1 },
+      { x: 0.2, y: 0, w: 0.2, h: 1 },
+      { x: 0.4, y: 0, w: 0.2, h: 1 },
+      { x: 0.6, y: 0, w: 0.2, h: 1 },
+      { x: 0.8, y: 0, w: 0.2, h: 1 },
     ],
     photos: [0, 1, 0, 1, 0],
   },
@@ -64,12 +78,12 @@ export const LAYOUTS = [
     id: 'mosaic',
     name: 'Mosaic',
     panels: [
-      { x: 0, y: 0, w: 0.5, h: 0.37 },
-      { x: 0.5, y: 0, w: 0.5, h: 0.185 },
-      { x: 0.5, y: 0.185, w: 0.5, h: 0.185 },
-      { x: 0, y: 0.37, w: 0.333, h: 0.37 },
-      { x: 0.333, y: 0.37, w: 0.334, h: 0.37 },
-      { x: 0.667, y: 0.37, w: 0.333, h: 0.37 },
+      { x: 0, y: 0, w: 0.5, h: 0.5 },
+      { x: 0.5, y: 0, w: 0.5, h: 0.25 },
+      { x: 0.5, y: 0.25, w: 0.5, h: 0.25 },
+      { x: 0, y: 0.5, w: 0.333, h: 0.5 },
+      { x: 0.333, y: 0.5, w: 0.334, h: 0.5 },
+      { x: 0.667, y: 0.5, w: 0.333, h: 0.5 },
     ],
     photos: [0, 1, 0, 1, 0, 1],
   },
@@ -81,25 +95,71 @@ export const SIZES = [
   { id: '1080x1350', label: '1080 x 1350 (portrait)', w: 1080, h: 1350 },
 ];
 
+// The night's itinerary, in story order: one label per panel. A layout with
+// fewer panels takes the first entries; the six-panel layout takes them all.
+// Every place name is original to this app.
+export const NIGHT_LABELS = [
+  { time: '8:12 PM', place: 'NEON PIER' },
+  { time: '10:47 PM', place: 'PALM ROW' },
+  { time: '12:30 AM', place: 'THE STRIP' },
+  { time: '2:05 AM', place: 'MARINA LIGHTS' },
+  { time: '4:40 AM', place: 'ROOFTOP 9' },
+  { time: '5:55 AM', place: 'MIDNIGHT FERRY' },
+];
+
+export function layoutById(id) {
+  return LAYOUTS.find((l) => l.id === id) ?? LAYOUTS[0];
+}
+
+export function gradeById(id) {
+  return GRADES.find((g) => g.id === id) ?? GRADES[0];
+}
+
+export function sizeById(id) {
+  return SIZES.find((s) => s.id === id) ?? SIZES[0];
+}
+
+// A fresh label list for a layout: one {time, place} per panel, in order.
+export function defaultLabels(layoutId) {
+  const layout = layoutById(layoutId);
+  return layout.panels.map((_, i) => ({ ...NIGHT_LABELS[i % NIGHT_LABELS.length] }));
+}
+
+// Scene-count words for the tagline: the cover counts its own panels.
+const SCENE_WORDS = ['ZERO', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT'];
+
+// The default tagline names the layout's scene count: a six-panel cover is
+// SIX SCENES, a five-panel cover is FIVE SCENES. A tagline the maker types
+// always wins over this default — the editor only refreshes it while it
+// still holds a default, and a shot only uses it when no tagline is given.
+export function defaultTagline(layoutId) {
+  const n = layoutById(layoutId).panels.length;
+  const word = SCENE_WORDS[n] ?? String(n);
+  return `${word} SCENES · ONE NIGHT · NO SLEEP`;
+}
+
 // Four colour grades. Each grade maps a pixel's luminance through a gradient
 // (stops of [luminance, [r, g, b]]) and blends the result with the photo.
 // `halftone` posterises instead, and adds a print-dot texture on top.
+// After Dark is a genuinely dark night grade now: near-black navy shadows,
+// deep teal midtones, magenta only in the highlights, blended hard, so the
+// panels read as night instead of pink dusk.
 export const GRADES = [
   {
     id: 'afterdark',
     name: 'After Dark',
-    hint: 'Neon night — teal shadows, magenta highlights',
-    blend: 0.72,
+    hint: 'Real night — deep navy shadows, teal midtones, magenta neon',
+    blend: 0.85,
     title: ['#7df9ff', '#c86bff', '#ff2ea6'],
     glow: '#ff2ea6',
     subtitle: '#ff5ec4',
     kicker: '#ffd319',
     stops: [
-      [0, [4, 12, 26]],
-      [0.25, [8, 42, 66]],
-      [0.5, [16, 96, 110]],
-      [0.75, [150, 70, 140]],
-      [1, [255, 190, 215]],
+      [0, [2, 6, 18]],
+      [0.25, [6, 28, 52]],
+      [0.5, [10, 70, 95]],
+      [0.75, [90, 60, 130]],
+      [1, [235, 160, 200]],
     ],
   },
   {
@@ -135,51 +195,56 @@ export const GRADES = [
     id: 'neonmono',
     name: 'Neon Mono',
     hint: 'Two-tone night — deep blue shadows, hot pink light',
-    blend: 0.88,
+    blend: 0.9,
     title: ['#ffffff', '#ffb3dd', '#ff2ea6'],
     glow: '#37e6ff',
     subtitle: '#37e6ff',
     kicker: '#37e6ff',
     stops: [
-      [0, [6, 8, 36]],
-      [0.35, [40, 40, 95]],
-      [0.65, [140, 60, 140]],
+      [0, [4, 6, 28]],
+      [0.35, [30, 30, 80]],
+      [0.65, [120, 50, 130]],
       [1, [255, 150, 205]],
     ],
   },
 ];
 
-export function layoutById(id) {
-  return LAYOUTS.find((l) => l.id === id) ?? LAYOUTS[0];
-}
-
-export function gradeById(id) {
-  return GRADES.find((g) => g.id === id) ?? GRADES[0];
-}
-
-export function sizeById(id) {
-  return SIZES.find((s) => s.id === id) ?? SIZES[0];
-}
+// One crop per panel position, so two panels never show the same slice of
+// the same photo: each has its own zoom and pan. The cover reads as one
+// night of scenes, not two photos repeated.
+const CROP_SPREAD = [
+  { zoom: 1.05, ox: 0, oy: 0.5 },
+  { zoom: 1.5, ox: -0.45, oy: 0.25 },
+  { zoom: 1.8, ox: 0.5, oy: -0.2 },
+  { zoom: 1.2, ox: 0.35, oy: 0.6 },
+  { zoom: 1.45, ox: -0.6, oy: -0.45 },
+  { zoom: 1.3, ox: 0.1, oy: 0.15 },
+];
 
 // Builds a fresh panel list for a layout: each panel shows its default photo
-// slot, at 1x zoom, centred. Callers keep one list per layout switch.
+// slot, at its own crop from the spread. Callers keep one list per layout.
 export function defaultPanels(layoutId) {
   const layout = layoutById(layoutId);
-  return layout.panels.map((_, i) => ({
-    photo: layout.photos[i] ?? 0,
-    zoom: 1,
-    ox: 0,
-    oy: 0,
-  }));
+  return layout.panels.map((_, i) => {
+    const crop = CROP_SPREAD[i % CROP_SPREAD.length];
+    return {
+      photo: layout.photos[i] ?? 0,
+      zoom: crop.zoom,
+      ox: crop.ox,
+      oy: crop.oy,
+    };
+  });
 }
 
-// Sets each panel's crop so a face is in frame: when the photo is cropped
-// vertically by a panel, the panel starts by showing the photo's upper part
-// (where faces usually are) instead of its middle. Call after photos load or
-// the layout changes; the maker can still drag any panel afterwards.
+// Re-frames every panel after photos load or the layout changes, keeping the
+// crops varied: the pan spreads across panels instead of centring them all,
+// so a face stays in frame up top in one panel while another shows the
+// street below. The maker can still drag any panel afterwards.
 export function autoCrop(state, coverW, coverH) {
   const layout = layoutById(state.layout);
   const loadedPhotos = state.photos.filter(Boolean);
+  const oySpread = [0.7, 0.15, -0.35, 0.5, -0.1, 0.3];
+  const oxSpread = [0, -0.4, 0.45, 0.3, -0.55, 0.15];
   layout.panels.forEach((p, i) => {
     const panel = state.panels[i];
     if (!panel) return;
@@ -194,8 +259,8 @@ export function autoCrop(state, coverW, coverH) {
     const pw = p.w * coverW;
     const ph = p.h * coverH;
     const scale = Math.max(pw / img.naturalWidth, ph / img.naturalHeight);
-    panel.oy = img.naturalHeight * scale > ph + 1 ? 0.7 : 0;
-    panel.ox = 0;
+    panel.oy = img.naturalHeight * scale > ph + 1 ? oySpread[i % oySpread.length] : 0;
+    panel.ox = img.naturalWidth * scale > pw + 1 ? oxSpread[i % oxSpread.length] : 0;
   });
 }
 
@@ -333,6 +398,64 @@ function drawPanel(ctx, rect, img, panel, grade, scale) {
   ctx.strokeRect(x + 2 * scale, y + 2 * scale, w - 4 * scale, h - 4 * scale);
 }
 
+// A rounded-rectangle path (ctx.roundRect is not in every browser build).
+function roundRectPath(ctx, x, y, w, h, r) {
+  const rad = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + rad, y);
+  ctx.lineTo(x + w - rad, y);
+  ctx.arcTo(x + w, y, x + w, y + rad, rad);
+  ctx.lineTo(x + w, y + h - rad);
+  ctx.arcTo(x + w, y + h, x + w - rad, y + h, rad);
+  ctx.lineTo(x + rad, y + h);
+  ctx.arcTo(x, y + h, x, y + h - rad, rad);
+  ctx.lineTo(x, y + rad);
+  ctx.arcTo(x, y, x + rad, y, rad);
+  ctx.closePath();
+}
+
+// The time + place chip on a panel: place name bold on top, time in yellow
+// below, on a dark chip with a yellow hairline. Sits in the panel's top-left
+// corner, above the title zone, and shrinks to fit narrow panels.
+function drawLabelChip(ctx, p, label, w, h, scale) {
+  if (!label || !label.place) return;
+  const pad = Math.max(6, 10 * scale);
+  const inset = Math.max(3, 7 * scale);
+  const maxTextW = p.w * w - inset * 2 - pad * 2;
+  let placeSize = Math.max(11, h * 0.017);
+  ctx.font = `700 ${placeSize}px system-ui, sans-serif`;
+  while (placeSize > 8 && ctx.measureText(label.place).width > maxTextW) {
+    placeSize -= 1;
+    ctx.font = `700 ${placeSize}px system-ui, sans-serif`;
+  }
+  const timeSize = Math.max(9, h * 0.0125);
+  ctx.font = `600 ${timeSize}px system-ui, sans-serif`;
+  const textW = Math.max(
+    ctx.measureText(label.place).width,
+    ctx.measureText(label.time || '').width,
+  );
+  const chipW = textW + pad * 2;
+  const chipH = placeSize * 1.15 + timeSize * 1.25 + pad * 1.5;
+  const x = p.x * w + inset;
+  const y = p.y * h + inset;
+  ctx.save();
+  roundRectPath(ctx, x, y, chipW, chipH, Math.max(3, 5 * scale));
+  ctx.fillStyle = 'rgba(4,4,14,0.78)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,211,25,0.55)';
+  ctx.lineWidth = Math.max(1, 1.5 * scale);
+  ctx.stroke();
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `700 ${placeSize}px system-ui, sans-serif`;
+  ctx.fillText(label.place, x + pad, y + pad + placeSize * 0.92);
+  ctx.fillStyle = '#ffd319';
+  ctx.font = `600 ${timeSize}px system-ui, sans-serif`;
+  ctx.fillText(label.time || '', x + pad, y + pad + placeSize * 1.15 + timeSize * 1.05);
+  ctx.restore();
+}
+
 // --- lettering -------------------------------------------------------------
 
 function splitTitle(ctx, text, maxWidth, size) {
@@ -389,7 +512,8 @@ function drawStarburst(ctx, cx, cy, r, lines) {
 // --- the cover -------------------------------------------------------------
 
 // Draws the whole cover onto `canvas` (its own width/height) from `state`.
-// state: { photos, panels, layout, grade, kicker, title, subtitle, tagline, badge }
+// state: { photos, panels, labels, layout, grade, kicker, title, subtitle,
+//          tagline, badge }
 // opts: { selected } — in the live preview, the selected panel gets an outline.
 export function drawCover(canvas, state, opts = {}) {
   const ctx = canvas.getContext('2d');
@@ -419,22 +543,32 @@ export function drawCover(canvas, state, opts = {}) {
     drawPanel(ctx, rect, img, panel, grade, scale);
   });
 
-  // Night mood: a dark wash from the top, and a vignette over the art area.
+  // Night mood: a dark wash from the top, a heavier vignette for the night
+  // grades, and a faint overall darken so the panels read as night.
   if (grade.id === 'afterdark' || grade.id === 'neonmono') {
     const top = ctx.createLinearGradient(0, 0, 0, h * 0.3);
-    top.addColorStop(0, 'rgba(2,6,18,0.55)');
+    top.addColorStop(0, 'rgba(2,6,18,0.5)');
     top.addColorStop(1, 'rgba(2,6,18,0)');
     ctx.fillStyle = top;
     ctx.fillRect(0, 0, w, h * 0.3);
+    ctx.fillStyle = 'rgba(2,6,20,0.16)';
+    ctx.fillRect(0, 0, w, h);
   }
   const vig = ctx.createRadialGradient(
-    w / 2, h * 0.37, Math.min(w, h) * 0.35,
-    w / 2, h * 0.37, Math.max(w, h) * 0.75,
+    w / 2, h * 0.4, Math.min(w, h) * 0.32,
+    w / 2, h * 0.4, Math.max(w, h) * 0.72,
   );
   vig.addColorStop(0, 'rgba(0,0,10,0)');
-  vig.addColorStop(1, 'rgba(0,0,10,0.32)');
+  vig.addColorStop(1, grade.id === 'afterdark' || grade.id === 'neonmono'
+    ? 'rgba(0,0,10,0.45)'
+    : 'rgba(0,0,10,0.32)');
   ctx.fillStyle = vig;
-  ctx.fillRect(0, 0, w, h * ART_BOTTOM);
+  ctx.fillRect(0, 0, w, h);
+
+  // One chip per panel: the night's timeline, hour by hour.
+  layout.panels.forEach((p, i) => {
+    drawLabelChip(ctx, p, (state.labels || [])[i], w, h, scale);
+  });
 
   // Selected panel outline (preview only, never in the export).
   if (typeof opts.selected === 'number' && opts.selected >= 0) {
@@ -449,20 +583,23 @@ export function drawCover(canvas, state, opts = {}) {
     }
   }
 
-  // Starburst badge, top-right corner of the art.
+  // Starburst badge, top-right corner of the cover.
   const badgeR = Math.max(34, 62 * scale * (w < h ? 1.15 : 1));
   const badgeLines = String(state.badge || 'EST. 2026').split(' ');
   drawStarburst(ctx, w - badgeR - 18 * scale, badgeR + 18 * scale, badgeR, badgeLines);
 
-  // Title band: a dark wash the lettering sits on.
-  const band = ctx.createLinearGradient(0, h * 0.68, 0, h);
-  band.addColorStop(0, 'rgba(5,5,18,0)');
-  band.addColorStop(0.22, 'rgba(5,5,18,0.88)');
-  band.addColorStop(1, 'rgba(5,5,18,0.96)');
-  ctx.fillStyle = band;
-  ctx.fillRect(0, h * 0.68, w, h * 0.32);
+  // Title scrim: the bottom third darkens so the giant title reads while
+  // the photos still show through above it. This is what makes the title
+  // part of the image instead of a caption strip below it.
+  const scrim = ctx.createLinearGradient(0, h * TITLE_ZONE, 0, h);
+  scrim.addColorStop(0, 'rgba(4,4,14,0)');
+  scrim.addColorStop(0.25, 'rgba(4,4,14,0.55)');
+  scrim.addColorStop(0.55, 'rgba(4,4,14,0.88)');
+  scrim.addColorStop(1, 'rgba(4,4,14,0.94)');
+  ctx.fillStyle = scrim;
+  ctx.fillRect(0, h * TITLE_ZONE, w, h * (1 - TITLE_ZONE));
 
-  // Neon streaks across the band for the night grades.
+  // Neon streaks across the title zone for the night grades.
   if (grade.id === 'afterdark' || grade.id === 'neonmono') {
     ctx.save();
     ctx.shadowBlur = 18 * scale;
@@ -470,48 +607,55 @@ export function drawCover(canvas, state, opts = {}) {
     ctx.shadowColor = '#37e6ff';
     ctx.strokeStyle = 'rgba(55,230,255,0.85)';
     ctx.beginPath();
-    ctx.moveTo(w * 0.06, h * 0.755);
-    ctx.lineTo(w * 0.94, h * 0.755);
+    ctx.moveTo(w * 0.06, h * 0.655);
+    ctx.lineTo(w * 0.94, h * 0.655);
     ctx.stroke();
     ctx.shadowColor = '#ff2ea6';
     ctx.strokeStyle = 'rgba(255,46,166,0.7)';
     ctx.beginPath();
-    ctx.moveTo(w * 0.06, h * 0.985);
-    ctx.lineTo(w * 0.94, h * 0.985);
+    ctx.moveTo(w * 0.06, h * 0.99);
+    ctx.lineTo(w * 0.94, h * 0.99);
     ctx.stroke();
     ctx.restore();
   }
 
-  // Kicker + five stars.
+  // Kicker + five stars, just above the title.
   const kickerSize = Math.max(16, h * 0.03);
-  const kickerY = h * 0.795;
   ctx.save();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = '#ffd319';
   ctx.font = `${Math.round(kickerSize * 0.85)}px system-ui, sans-serif`;
-  ctx.fillText('★★★★★', w / 2, kickerY - kickerSize * 1.05);
+  ctx.fillText('★★★★★', w / 2, h * 0.685);
   ctx.fillStyle = grade.kicker;
   ctx.font = `700 ${Math.round(kickerSize)}px system-ui, sans-serif`;
   if ('letterSpacing' in ctx) ctx.letterSpacing = `${Math.round(kickerSize * 0.28)}px`;
-  ctx.fillText(String(state.kicker || '').toUpperCase(), w / 2, kickerY);
+  ctx.fillText(String(state.kicker || '').toUpperCase(), w / 2, h * 0.72);
   if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
   ctx.restore();
 
-  // Giant title, gradient-filled with a thick black outline and a glow.
+  // Giant title, gradient-filled with a thick black outline and a glow,
+  // crashing over the bottom third of the photos.
   const titleText = String(state.title || '').toUpperCase();
+  let titleTop = h * 0.75;
+  let titleTotal = 0;
   if (titleText) {
-    let size = h * 0.135;
+    let size = h * 0.17;
     ctx.font = `${size}px Anton, 'Arial Black', sans-serif`;
     while (size > 20 && ctx.measureText(titleText).width > w * 0.94) {
       size -= 4;
       ctx.font = `${size}px Anton, 'Arial Black', sans-serif`;
     }
-    const lines = splitTitle(ctx, titleText, w * 0.94, size);
+    let lines = splitTitle(ctx, titleText, w * 0.94, size);
+    if (lines.length > 1) {
+      // A two-line title shrinks so the whole block still fits the zone.
+      size = Math.max(20, Math.round(size * 0.6));
+      lines = splitTitle(ctx, titleText, w * 0.94, size);
+    }
     const lineHeight = size * 0.98;
-    const total = lines.length * lineHeight;
-    const titleTop = h * 0.885 - total / 2;
-    const grad = ctx.createLinearGradient(0, titleTop, 0, titleTop + total);
+    titleTotal = lines.length * lineHeight;
+    titleTop = h * 0.83 - titleTotal / 2;
+    const grad = ctx.createLinearGradient(0, titleTop, 0, titleTop + titleTotal);
     grade.title.forEach((c, i) => grad.addColorStop(i / (grade.title.length - 1), c));
     ctx.save();
     ctx.textAlign = 'center';
@@ -540,7 +684,7 @@ export function drawCover(canvas, state, opts = {}) {
   const subtitle = String(state.subtitle || '');
   if (subtitle) {
     const subSize = Math.max(20, h * 0.046);
-    const subY = h * 0.885 + (titleText ? h * 0.048 : 0);
+    const subY = Math.min(titleTop + titleTotal + h * 0.015, h * 0.95);
     ctx.save();
     ctx.translate(w / 2 + w * 0.1, subY);
     ctx.rotate(-0.045);
@@ -560,7 +704,7 @@ export function drawCover(canvas, state, opts = {}) {
     ctx.restore();
   }
 
-  // Tagline: small caps with a rule on each side.
+  // Tagline: small caps with a rule on each side, at the very bottom.
   const tagline = String(state.tagline || '');
   if (tagline) {
     const tagSize = Math.max(11, h * 0.02);
@@ -593,9 +737,10 @@ export function drawCover(canvas, state, opts = {}) {
   ctx.strokeRect(6 * scale, 6 * scale, w - 12 * scale, h - 12 * scale);
 }
 
-// Which panel (if any) contains the point (x, y) in cover pixels.
+// Which panel (if any) contains the point (x, y) in cover pixels. The panels
+// fill the whole cover now, so any point inside a panel counts — including
+// points under the title, where the panel is still the thing being edited.
 export function panelAt(state, x, y, w, h) {
-  if (y > h * ART_BOTTOM) return -1;
   const layout = layoutById(state.layout);
   for (let i = 0; i < layout.panels.length; i++) {
     const p = layout.panels[i];

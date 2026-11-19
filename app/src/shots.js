@@ -2,8 +2,10 @@
 // photo loaded; ?shot=cover shows the cover alone, at its export size.
 // Query params: photo (boulevard | pier — which sample is photo 1),
 // title, kicker, subtitle, tagline, grade, layout, size (1920x1080 |
-// 1080x1080 | 1080x1350). window.__shotReady is set once painted.
-import { drawCover, autoCrop, sizeById } from './cover.js';
+// 1080x1080 | 1080x1350). Panel labels always come from the layout's
+// default itinerary, so a shot shows the timeline as designed.
+// window.__shotReady is set once painted.
+import { drawCover, autoCrop, defaultLabels, defaultTagline, sizeById } from './cover.js';
 
 function applyParams(query, state) {
   const get = (key) => query.get(key);
@@ -21,6 +23,12 @@ export async function runShot(shot, query, api) {
   const { state, loadImage, render, setStatus } = api;
   if (shot === 'cover') document.body.classList.add('shot-cover');
   applyParams(query, state);
+  // A shot without an explicit tagline shows the layout's own scene count:
+  // the mosaic shot reads SIX SCENES, the one-night shot FIVE SCENES.
+  // An explicit tagline in the query still wins, exactly as typed.
+  if (!query.get('tagline')) state.tagline = defaultTagline(state.layout);
+  // Labels follow the layout: a shot of a layout shows its itinerary.
+  state.labels = defaultLabels(state.layout);
 
   // Load the two sample photos; `photo` picks which one is photo 1 (the hero).
   const first = query.get('photo') === 'pier' ? 'pier' : 'boulevard';
@@ -33,7 +41,8 @@ export async function runShot(shot, query, api) {
     setStatus(`Shot photos failed to load: ${err.message}`);
   }
 
-  // Keep the caption inputs in sync with the shot's words.
+  // Keep the caption inputs in sync with the shot's words, including the
+  // selected panel's time + place label.
   const sync = (id, value) => {
     const el = document.getElementById(id);
     if (el) el.value = value;
@@ -43,6 +52,8 @@ export async function runShot(shot, query, api) {
   sync('subtitle', state.subtitle);
   sync('tagline', state.tagline);
   sync('badge', state.badge);
+  sync('label-time', (state.labels[0] || {}).time || '');
+  sync('label-place', (state.labels[0] || {}).place || '');
 
   if (shot === 'cover') {
     // Full export resolution, drawn straight onto the preview canvas; the
@@ -58,6 +69,11 @@ export async function runShot(shot, query, api) {
     const canvas = document.getElementById('preview');
     autoCrop(state, canvas.width, canvas.height);
     render();
+    // The editor shot shows the export section: scroll the controls column
+    // to its bottom so the export buttons — and the selected-panel controls
+    // above them — are fully in frame instead of cut off by the viewport.
+    const controls = document.querySelector('.controls');
+    if (controls) controls.scrollTop = controls.scrollHeight;
   }
 
   await document.fonts.ready;

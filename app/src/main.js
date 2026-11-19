@@ -1,14 +1,17 @@
-// Vice City After Dark — the editor.
+// One Night in Vice City — the editor.
 //
-// Wires the page: upload up to three photos, pick a layout and a colour grade,
-// write the caption, crop each panel by dragging it, and export the cover as
-// a PNG in 1080 x 1080, 1080 x 1350 or 1920 x 1080. Photos are read on the
-// person's own machine and never uploaded anywhere. A `?shot=` query sets up
-// a fixed scene for a screenshot instead (./shots.js).
+// Wires the page: upload up to three photos, pick a layout and a colour
+// grade, write the caption and each panel's time + place label, crop each
+// panel by dragging it, and export the cover as a PNG in 1080 x 1080,
+// 1080 x 1350 or 1920 x 1080. Photos are read on the person's own machine
+// and never uploaded anywhere. A `?shot=` query sets up a fixed scene for a
+// screenshot instead (./shots.js).
 
 import {
   drawCover,
   defaultPanels,
+  defaultLabels,
+  defaultTagline,
   autoCrop,
   layoutById,
   gradeById,
@@ -28,18 +31,24 @@ const statusEl = $('status');
 
 const state = {
   photos: [null, null, null],
-  panels: defaultPanels('night-drive'),
-  layout: 'night-drive',
+  panels: defaultPanels('one-night'),
+  labels: defaultLabels('one-night'),
+  layout: 'one-night',
   grade: 'afterdark',
   size: '1920x1080',
   kicker: 'WELCOME TO VICE CITY',
   title: 'AFTER DARK',
-  subtitle: 'Vice City Nights',
-  tagline: 'EVERY NEON HIDES A STORY',
+  subtitle: 'One Night in Vice City',
+  // The tagline starts as the default for the opening layout (five scenes)
+  // and follows the layout's scene count until the maker types their own.
+  tagline: defaultTagline('one-night'),
   badge: 'EST. 2026',
 };
 
 let selected = 0;
+// True once the maker has typed a tagline of their own: from then on the
+// tagline is theirs, and switching layouts no longer rewrites it.
+let taglineEdited = false;
 let drag = null;
 
 // --- helpers ---------------------------------------------------------------
@@ -151,6 +160,13 @@ function buildPickers() {
   buildPicker('layouts', LAYOUTS, state.layout, (id) => {
     state.layout = id;
     state.panels = defaultPanels(id);
+    state.labels = defaultLabels(id);
+    // The tagline counts the layout's scenes — until the maker types their
+    // own, which then sticks across layout changes.
+    if (!taglineEdited) {
+      state.tagline = defaultTagline(id);
+      $('tagline').value = state.tagline;
+    }
     selected = 0;
     const { w, h } = previewSize();
     autoCrop(state, w, h);
@@ -183,6 +199,8 @@ function bindCaptions() {
     const input = $(inputId);
     input.value = state[key];
     input.addEventListener('input', () => {
+      // Typing a tagline claims it: layout switches stop refreshing it.
+      if (key === 'tagline') taglineEdited = true;
       state[key] = input.value;
       render();
     });
@@ -191,12 +209,28 @@ function bindCaptions() {
 
 // --- panel editing -----------------------------------------------------------
 
+// The selected panel's time + place label: two small inputs that write
+// straight into state.labels[selected] and repaint the cover.
+function bindLabels() {
+  $('label-time').addEventListener('input', (e) => {
+    state.labels[selected].time = e.target.value;
+    render();
+  });
+  $('label-place').addEventListener('input', (e) => {
+    state.labels[selected].place = e.target.value;
+    render();
+  });
+}
+
 function updatePanelControls() {
   const layout = layoutById(state.layout);
   const n = layout.panels.length;
   if (selected >= n) selected = 0;
   $('panel-label').textContent = `Panel ${selected + 1} of ${n}`;
   const panel = state.panels[selected];
+  const label = state.labels[selected] ?? { time: '', place: '' };
+  $('label-time').value = label.time;
+  $('label-place').value = label.place;
   const zoom = $('zoom');
   zoom.value = String(panel.zoom);
   $('zoom-value').textContent = `${Math.round(panel.zoom * 100)}%`;
@@ -335,6 +369,7 @@ async function boot() {
   buildPickers();
   bindPhotoInputs();
   bindCaptions();
+  bindLabels();
   bindPanelControls();
   bindCanvas();
   bindExport();
