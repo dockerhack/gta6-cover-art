@@ -1,83 +1,152 @@
-// Fixed scenes for screenshots: ?shot=editor shows the page with a sample
-// photo loaded; ?shot=cover shows the cover alone, at its export size.
-// Query params: photo (boulevard | pier — which sample is photo 1),
-// title, kicker, subtitle, tagline, grade, layout, size (1920x1080 |
-// 1080x1080 | 1080x1350). Panel labels always come from the layout's
-// default itinerary, so a shot shows the timeline as designed.
-// window.__shotReady is set once painted.
-import { drawCover, autoCrop, defaultLabels, defaultTagline, sizeById } from './cover.js';
+// Vice City Cover Studio — screenshot script (Node, standard library plus
+// playwright-core for the browser). Serves app/ on localhost, opens it in
+// headless Chromium, and saves the three screenshots to screenshots/:
+//
+//   1-cover.jpg  the One Night cover, After Dark grade, 1280 x 720
+//   2-editor.jpg the editor at work, export controls visible, 1280 x 1000
+//   3-cover.jpg  the six-panel Mosaic cover, Neon Mono grade, 1080 x 1080
+//
+// Run from the repository root with:
+//   node app/src/shots.js
+//
+// playwright-core is resolved from the local node_modules first, then from
+// PLAYWRIGHT_CORE_PATH. Chromium comes from CHROME_PATH, else the system
+// Chrome at /opt/meta-chromium/chrome.
 
-function applyParams(query, state) {
-  const get = (key) => query.get(key);
-  if (get('layout')) state.layout = get('layout');
-  if (get('grade')) state.grade = get('grade');
-  if (get('size')) state.size = get('size');
-  if (get('title')) state.title = get('title');
-  if (get('kicker')) state.kicker = get('kicker');
-  if (get('subtitle')) state.subtitle = get('subtitle');
-  if (get('tagline')) state.tagline = get('tagline');
-  if (get('badge')) state.badge = get('badge');
+const { createServer } = require('node:http');
+const { readFile } = require('node:fs/promises');
+const { extname, join, normalize, sep, dirname } = require('node:path');
+
+const repoDir = join(__dirname, '..', '..');
+const appDir = join(repoDir, 'app');
+const shotsDir = join(repoDir, 'screenshots');
+
+let chromium;
+try {
+  ({ chromium } = require('playwright-core'));
+} catch {
+  ({ chromium } = require(process.env.PLAYWRIGHT_CORE_PATH || '/tmp/shot-tool/node_modules/playwright-core'));
 }
 
-export async function runShot(shot, query, api) {
-  const { state, loadImage, render, setStatus } = api;
-  if (shot === 'cover') document.body.classList.add('shot-cover');
-  applyParams(query, state);
-  // A shot without an explicit tagline shows the layout's own scene count:
-  // the mosaic shot reads SIX SCENES, the one-night shot FIVE SCENES.
-  // An explicit tagline in the query still wins, exactly as typed.
-  if (!query.get('tagline')) state.tagline = defaultTagline(state.layout);
-  // Labels follow the layout: a shot of a layout shows its itinerary.
-  state.labels = defaultLabels(state.layout);
+const CHROME = process.env.CHROME_PATH || '/home/hatch/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome';
 
-  // Load the two sample photos; `photo` picks which one is photo 1 (the hero).
-  const first = query.get('photo') === 'pier' ? 'pier' : 'boulevard';
-  const second = first === 'pier' ? 'boulevard' : 'pier';
+const TYPES = {
+  '.html': 'text/html; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.ttf': 'font/ttf',
+  '.json': 'application/json; charset=utf-8',
+};
+
+function serveApp() {
+  const server = createServer(async (req, res) => {
+    try {
+      const url = new URL(req.url || '/', 'http://127.0.0.1');
+      let rel = decodeURIComponent(url.pathname);
+      if (rel === '/') rel = '/index.html';
+      const file = normalize(join(appDir, rel));
+      if (!file.startsWith(appDir + sep)) {
+        res.writeHead(403);
+        res.end('forbidden');
+        return;
+      }
+      const body = await readFile(file);
+      res.writeHead(200, { 'content-type': TYPES[extname(file)] || 'application/octet-stream' });
+      res.end(body);
+    } catch {
+      res.writeHead(404);
+      res.end('not found');
+    }
+  });
+  return new Promise((resolve) => {
+    server.listen(0, '127.0.0.1', () => {
+      resolve({ server, port: server.address().port });
+    });
+  });
+}
+
+async function main() {
+  const { server, port } = await serveApp();
+  const base = 'http://127.0.0.1:' + port + '/index.html';
+  const browser = await chromium.launch({
+    executablePath: CHROME,
+    args: ['--no-sandbox', '--disable-dev-shm-usage'],
+  });
+  const problems = [];
   try {
-    state.photos[0] = await loadImage(`samples/${first}.jpg`);
-    state.photos[1] = await loadImage(`samples/${second}.jpg`);
-    state.photos[2] = null;
-  } catch (err) {
-    setStatus(`Shot photos failed to load: ${err.message}`);
+    // --- Shot 1: the One Night cover, After Dark, landscape. ---
+    const page1 = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+    page1.on('console', (m) => { if (m.type() === 'error') problems.push('shot1 console: ' + m.text()); });
+    page1.on('pageerror', (e) => problems.push('shot1 pageerror: ' + e.message));
+    page1.on('request', (r) => {
+      if (!r.url().startsWith('http://127.0.0.1')) problems.push('shot1 external request: ' + r.url());
+    });
+    await page1.goto(base + '?present=1', { waitUntil: 'load' });
+    await page1.evaluate(() => window.coverApp.ready);
+    await page1.evaluate(() => window.coverApp.present('oneNight', 'afterDark', 1920, 1080));
+    await page1.waitForTimeout(400);
+    await page1.locator('#coverCanvas').screenshot({ path: join(shotsDir, '1-cover.jpg'), type: 'jpeg', quality: 88 });
+    const tag1 = await page1.evaluate(() => window.VCCover.taglineFor(window.coverApp.state));
+    console.log('1-cover.jpg tagline: ' + tag1);
+    await page1.close();
+
+    // --- Shot 2: the editor at work, export controls visible. ---
+    const page2 = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
+    page2.on('console', (m) => { if (m.type() === 'error') problems.push('shot2 console: ' + m.text()); });
+    page2.on('pageerror', (e) => problems.push('shot2 pageerror: ' + e.message));
+    page2.on('request', (r) => {
+      if (!r.url().startsWith('http://127.0.0.1')) problems.push('shot2 external request: ' + r.url());
+    });
+    await page2.goto(base, { waitUntil: 'load' });
+    await page2.evaluate(() => window.coverApp.ready);
+    await page2.evaluate(() => {
+      document.getElementById('exportAll').scrollIntoView({ block: 'center' });
+    });
+    await page2.waitForTimeout(400);
+    const btnBox = await page2.locator('#exportAll').boundingBox();
+    console.log('exportAll button box in viewport: ' + JSON.stringify(btnBox));
+    if (!btnBox || btnBox.y < 0 || btnBox.y + btnBox.height > 1000) {
+      problems.push('shot2: Export all 3 sizes button not fully inside the 1280x1000 viewport');
+    }
+    await page2.screenshot({ path: join(shotsDir, '2-editor.jpg'), type: 'jpeg', quality: 88 });
+    await page2.close();
+
+    // --- Shot 3: the Mosaic cover, Neon Mono, square. ---
+    const page3 = await browser.newPage({ viewport: { width: 1080, height: 1080 } });
+    page3.on('console', (m) => { if (m.type() === 'error') problems.push('shot3 console: ' + m.text()); });
+    page3.on('pageerror', (e) => problems.push('shot3 pageerror: ' + e.message));
+    page3.on('request', (r) => {
+      if (!r.url().startsWith('http://127.0.0.1')) problems.push('shot3 external request: ' + r.url());
+    });
+    await page3.goto(base + '?present=1', { waitUntil: 'load' });
+    await page3.evaluate(() => window.coverApp.ready);
+    await page3.evaluate(() => window.coverApp.present('mosaic', 'neonMono', 1080, 1080));
+    await page3.waitForTimeout(400);
+    await page3.locator('#coverCanvas').screenshot({ path: join(shotsDir, '3-cover.jpg'), type: 'jpeg', quality: 88 });
+    const tag3 = await page3.evaluate(() => window.VCCover.taglineFor(window.coverApp.state));
+    console.log('3-cover.jpg tagline: ' + tag3);
+    if (tag3 !== 'SIX SCENES · ONE NIGHT · NO SLEEP') {
+      problems.push('shot3: tagline is not SIX SCENES: ' + tag3);
+    }
+    await page3.close();
+  } finally {
+    await browser.close();
+    server.close();
   }
 
-  // Keep the caption inputs in sync with the shot's words, including the
-  // selected panel's time + place label.
-  const sync = (id, value) => {
-    const el = document.getElementById(id);
-    if (el) el.value = value;
-  };
-  sync('kicker', state.kicker);
-  sync('title', state.title);
-  sync('subtitle', state.subtitle);
-  sync('tagline', state.tagline);
-  sync('badge', state.badge);
-  sync('label-time', (state.labels[0] || {}).time || '');
-  sync('label-place', (state.labels[0] || {}).place || '');
-
-  if (shot === 'cover') {
-    // Full export resolution, drawn straight onto the preview canvas; the
-    // page CSS scales it to the viewport, so the screenshot is the real art.
-    const size = sizeById(state.size);
-    const canvas = document.getElementById('preview');
-    canvas.width = size.w;
-    canvas.height = size.h;
-    autoCrop(state, size.w, size.h);
-    drawCover(canvas, state, {});
+  if (problems.length > 0) {
+    console.error('PROBLEMS:');
+    problems.forEach((p) => console.error(' - ' + p));
+    process.exitCode = 1;
   } else {
-    render();
-    const canvas = document.getElementById('preview');
-    autoCrop(state, canvas.width, canvas.height);
-    render();
-    // The editor shot shows the export section: scroll the controls column
-    // to its bottom so the export buttons — and the selected-panel controls
-    // above them — are fully in frame instead of cut off by the viewport.
-    const controls = document.querySelector('.controls');
-    if (controls) controls.scrollTop = controls.scrollHeight;
+    console.log('All three screenshots saved to ' + shotsDir);
   }
-
-  await document.fonts.ready;
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    window.__shotReady = true;
-  }));
 }
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
