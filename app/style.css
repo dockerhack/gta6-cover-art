@@ -1,6 +1,6 @@
-/* After Dark — Vice City Cover Studio. Dark neon editor UI; the fonts are the
-   app's own OFL files under ./fonts/ (Anton for display type, Pacifico for
-   the neon script). No network request is made by this page. */
+/* After Dark — Vice City Cover Studio. Dark neon editor UI; the fonts are
+   the app's own OFL files under ./fonts/ (Anton for display type, Pacifico
+   for the neon script). No network request is made by this page. */
 
 @font-face {
   font-family: 'Anton';
@@ -211,6 +211,8 @@ button.mini {
 button:hover { filter: brightness(1.15); }
 
 .row { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.row label { flex: 1; margin-bottom: 0; }
 
 #status { margin: 6px 0 0; color: var(--muted); font-size: 12px; min-height: 17px; }
 
