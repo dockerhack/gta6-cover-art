@@ -1,3 +1,16 @@
-out/
+# Dependencies and build output
 node_modules/
+out/
+dist/
+build/
+
+# Editor and OS files
 .DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Logs and local tooling
+*.log
+.tmp/
