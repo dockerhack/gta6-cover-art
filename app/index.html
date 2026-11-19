@@ -1,96 +1,106 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>After Dark — Vice City Cover Studio</title>
+<title>Vice City Cover Studio — One Night in Vice City</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="topbar">
+<header id="topbar">
   <div class="brand">
-    <span class="brand-mark">AD</span>
-    <div>
-      <h1>After Dark</h1>
-      <p>Vice City Cover Studio — a one-night timeline cover from your photos</p>
-    </div>
+    <h1>VICE CITY <span>COVER STUDIO</span></h1>
+    <p>Turn your photos into a one-night GTA-style timeline cover</p>
   </div>
-  <p class="topbar-note">Photos never leave your machine. No sign-up, no upload.</p>
+  <div class="top-note">100% offline — your photos never leave this machine</div>
 </header>
 
-<main class="app">
-  <section class="controls" aria-label="Cover controls">
-    <div class="group">
-      <h2>1 · Photos</h2>
-      <p class="hint">Up to three photos. Click a panel in the preview, then drag it to crop.</p>
-      <div class="photo-row">
-        <label>Photo 1 <input id="photo-1" type="file" accept="image/*"></label>
-        <button id="clear-1" type="button" class="mini">Clear</button>
+<main id="workspace">
+  <aside id="editor" aria-label="Cover editor">
+    <section class="panel" id="photosPanel">
+      <h2>1 · Your photos</h2>
+      <p class="hint">Two photo slots. Each cover panel uses one of them.</p>
+      <div class="photo-slot" id="slotA">
+        <img id="thumbA" alt="Photo A preview">
+        <div class="slot-body">
+          <label for="fileA">Photo A</label>
+          <input type="file" id="fileA" accept="image/*">
+          <span class="file-name" id="nameA">boulevard.jpg (sample)</span>
+        </div>
       </div>
-      <div class="photo-row">
-        <label>Photo 2 <input id="photo-2" type="file" accept="image/*"></label>
-        <button id="clear-2" type="button" class="mini">Clear</button>
+      <div class="photo-slot" id="slotB">
+        <img id="thumbB" alt="Photo B preview">
+        <div class="slot-body">
+          <label for="fileB">Photo B</label>
+          <input type="file" id="fileB" accept="image/*">
+          <span class="file-name" id="nameB">pier.jpg (sample)</span>
+        </div>
       </div>
-      <div class="photo-row">
-        <label>Photo 3 <input id="photo-3" type="file" accept="image/*"></label>
-        <button id="clear-3" type="button" class="mini">Clear</button>
-      </div>
-      <button id="samples" type="button" class="secondary">Load sample photos</button>
-    </div>
+    </section>
 
-    <div class="group">
+    <section class="panel" id="layoutPanel">
       <h2>2 · Layout</h2>
-      <div id="layouts" class="picks"></div>
-    </div>
+      <div class="button-row" id="layoutButtons" role="group" aria-label="Cover layout"></div>
+    </section>
 
-    <div class="group">
+    <section class="panel" id="gradePanel">
       <h2>3 · Grade</h2>
-      <div id="grades" class="picks"></div>
-    </div>
+      <div class="button-row" id="gradeButtons" role="group" aria-label="Colour grade"></div>
+    </section>
 
-    <div class="group">
+    <section class="panel" id="captionPanel">
       <h2>4 · Caption</h2>
-      <label>Kicker <input id="kicker" type="text" maxlength="40" value="WELCOME TO VICE CITY"></label>
-      <label>Title <input id="title" type="text" maxlength="24" value="AFTER DARK"></label>
-      <label>Script subtitle <input id="subtitle" type="text" maxlength="40" value="One Night in Vice City"></label>
-      <label>Tagline <input id="tagline" type="text" maxlength="60" value="FIVE SCENES · ONE NIGHT · NO SLEEP"></label>
-      <label>Badge <input id="badge" type="text" maxlength="12" value="EST. 2026"></label>
-    </div>
-
-    <div class="group">
-      <h2>5 · Selected panel</h2>
-      <p class="hint"><span id="panel-label">Panel 1 of 5</span> — drag the photo to move it, scroll to zoom.</p>
-      <label>Shows <select id="panel-photo"></select></label>
-      <div class="row">
-        <label>Time <input id="label-time" type="text" maxlength="12" value="8:12 PM"></label>
-        <label>Place <input id="label-place" type="text" maxlength="20" value="NEON PIER"></label>
-      </div>
-      <label>Zoom <span id="zoom-value">100%</span>
-        <input id="zoom" type="range" min="1" max="3" step="0.05" value="1">
+      <label class="field">Kicker
+        <input type="text" id="kickerInput" maxlength="48" value="WELCOME TO VICE CITY">
       </label>
-      <div class="row">
-        <button id="reset-crop" type="button" class="mini">Reset crop</button>
-        <button id="fill-all" type="button" class="mini">Use in all panels</button>
-        <button id="shuffle" type="button" class="mini">Shuffle photos</button>
-      </div>
-    </div>
+      <label class="field">Title
+        <input type="text" id="titleInput" maxlength="24" value="AFTER DARK">
+      </label>
+      <label class="field">Script line
+        <input type="text" id="scriptInput" maxlength="48" value="One Night in Vice City">
+      </label>
+      <label class="field">Tagline
+        <span class="field-row">
+          <input type="text" id="taglineInput" maxlength="64">
+          <button type="button" id="taglineAuto" title="Follow the layout again">Auto</button>
+        </span>
+      </label>
+    </section>
 
-    <div class="group">
+    <section class="panel" id="labelsPanel">
+      <h2>5 · Panel times &amp; places</h2>
+      <p class="hint">Drag a panel on the cover to re-crop it. Scroll over a panel to zoom.</p>
+      <div id="labelRows"></div>
+    </section>
+
+    <section class="panel" id="exportPanel">
       <h2>6 · Export</h2>
-      <div id="sizes" class="picks"></div>
-      <button id="export" type="button" class="primary">Export PNG</button>
-      <button id="export-all" type="button" class="secondary">Export all 3 sizes</button>
-      <p id="status" role="status">Loading sample photos…</p>
-    </div>
-  </section>
+      <label class="field">Preview size
+        <select id="sizeSelect">
+          <option value="1080x1080" selected>Square · 1080 × 1080</option>
+          <option value="1080x1350">Portrait · 1080 × 1350</option>
+          <option value="1920x1080">Wide · 1920 × 1080</option>
+        </select>
+      </label>
+      <div class="export-row">
+        <button type="button" class="export-btn" data-export="1080x1080">PNG 1080×1080</button>
+        <button type="button" class="export-btn" data-export="1080x1350">PNG 1080×1350</button>
+        <button type="button" class="export-btn" data-export="1920x1080">PNG 1920×1080</button>
+      </div>
+      <button type="button" id="exportAll" class="primary-btn">Export all 3 sizes</button>
+    </section>
 
-  <section class="stage" aria-label="Live preview">
-    <canvas id="preview" width="960" height="540" aria-label="The cover preview"></canvas>
-    <p class="stage-note">Live preview — what you see is the PNG you export.</p>
+    <p id="status" role="status">Loading sample photos…</p>
+  </aside>
+
+  <section id="stage" aria-label="Live cover preview">
+    <canvas id="coverCanvas" width="1080" height="1080"></canvas>
+    <p class="stage-hint">Live preview — drag a panel to re-crop, scroll to zoom, everything updates as you type.</p>
   </section>
 </main>
 
-<script type="module" src="./src/main.js"></script>
+<script src="src/cover.js"></script>
+<script src="src/main.js"></script>
 </body>
 </html>
