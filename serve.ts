@@ -1,9 +1,11 @@
-// A tiny static server for app/ (Node 22, standard library only), so an entry can be tried
-// locally without a build step: `node serve.ts` serves app/ on http://localhost:8080.
-// It sends the MIME types an offline web app needs, refuses any path outside app/, and otherwise
-// does nothing clever: this is a development convenience, not a web server for the internet.
-import { createReadStream, statSync } from 'node:fs';
+// A tiny static server for previewing the app at http://localhost:8080 —
+// `node serve.ts` (or `node serve.ts --port 9000`), then stop it with Ctrl+C.
+// It sends the MIME types an offline web app needs, refuses any path outside
+// app/, and otherwise does nothing clever: a development convenience, not a
+// web server for the internet. No dependencies, Node 22 standard library only.
+
 import { createServer } from 'node:http';
+import { createReadStream, statSync } from 'node:fs';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -69,5 +71,5 @@ createServer((request, response) => {
   });
   createReadStream(file).pipe(response);
 }).listen(port, '127.0.0.1', () => {
-  console.log(`app/ is on http://localhost:${port}`);
+  console.log(`After Dark — open http://localhost:${port}`);
 });

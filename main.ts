@@ -1,10 +1,10 @@
 // After Dark — the entry program (Node 22, standard library only).
 //
 // It hands the web app in: it copies this repository's app/ and screenshots/
-// beside this file to /output and writes /output/dossier.json, the summary the
-// judge reads, with the vendored make.fun library. The app itself is plain
-// static files a desktop browser loads offline (app/index.html and its ES
-// modules, the OFL fonts under app/fonts/, no library and no network request).
+// beside this file to /output and writes /output/dossier.json, the summary
+// the judge reads, with the vendored make.fun library. The app itself is
+// plain static files a desktop browser loads offline (app/index.html and its
+// ES modules, the OFL fonts under app/fonts/, no library, no network).
 //
 // Serve the app locally with `node serve.ts`, then open http://localhost:8080.
 // Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:
